@@ -11,9 +11,9 @@ use uuid::Uuid;
 pub type PendingSocketConnections = Arc<Mutex<HashMap<Uuid, ConnectionPipe>>>;
 
 pub struct ConnectionPipe {
-    /// Send into this pipe in order to send data in the socket
+    /// Websocket sends into this pipe in order to send data in the socket
     pub websocket_data: mpsc::Sender<Vec<u8>>,
-    /// Await this pipe to get the data from the opened socket
+    /// Websocket await this pipe to get the data from the opened socket
     pub socket_data: mpsc::Receiver<Vec<u8>>,
 }
 

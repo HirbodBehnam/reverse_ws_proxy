@@ -22,7 +22,7 @@ pub enum ControllerCommand {
 const CONTROLLER_COMMANDER_CHAN_LENGTH: usize = 10;
 
 /// One side of a channel which
-static CONTROLLER_COMMANDER: Mutex<Option<mpsc::Sender<ControllerCommand>>> =
+pub static CONTROLLER_COMMANDER: Mutex<Option<mpsc::Sender<ControllerCommand>>> =
     Mutex::new(Option::None);
 
 /// Entry point of websockets which are coming to control type
