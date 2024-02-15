@@ -1,5 +1,5 @@
 use futures::SinkExt;
-use log::{debug, info, warn};
+use log::{info, trace, warn};
 use parking_lot::Mutex;
 
 use std::ops::DerefMut;
@@ -13,7 +13,7 @@ use uuid::Uuid;
 use futures::stream::{SplitSink, StreamExt};
 
 /// The possible commands that we can be sent to the controller.
-pub enum ControllerCommand {
+pub(crate) enum ControllerCommand {
     /// Request for a new connection with a specific UUID
     NewConnection(Uuid),
 }
@@ -22,15 +22,16 @@ pub enum ControllerCommand {
 const CONTROLLER_COMMANDER_CHAN_LENGTH: usize = 10;
 
 /// One side of a channel which
-pub static CONTROLLER_COMMANDER: Mutex<Option<mpsc::Sender<ControllerCommand>>> =
+pub(crate) static CONTROLLER_COMMANDER: Mutex<Option<mpsc::Sender<ControllerCommand>>> =
     Mutex::new(Option::None);
 
 /// Entry point of websockets which are coming to control type
-pub async fn ws_handler(ws: WebSocketUpgrade) -> impl IntoResponse {
+pub(crate) async fn ws_handler(ws: WebSocketUpgrade) -> impl IntoResponse {
     // We only allow on instance of the controller.
     let mut commander = CONTROLLER_COMMANDER.lock();
     if commander.is_some() {
         drop(commander);
+        warn!("Duplicate controller");
         // Well, no. LOL
         return axum::http::Response::builder()
             .status(axum::http::StatusCode::CONFLICT)
@@ -46,6 +47,7 @@ pub async fn ws_handler(ws: WebSocketUpgrade) -> impl IntoResponse {
     ws.on_upgrade(move |socket| async {
         handle_socket(socket, command_receiver).await;
         CONTROLLER_COMMANDER.lock().take(); // empty the commander
+        warn!("Commander died");
     })
 }
 
@@ -80,7 +82,7 @@ async fn handle_socket(
             command = command_receiver.recv() => {
                 match command {
                     Some(command) => handle_control_command(command, &mut sender).await,
-                    None => panic!("COMMAND RECEIVER CLOSED"), // TODO: close the socket
+                    None => unreachable!("command receiver closed"),
                 }
             }
         }
@@ -94,7 +96,7 @@ async fn handle_control_command(command: ControllerCommand, sender: &mut SplitSi
         ControllerCommand::NewConnection(uuid) => {
             // Just send the uuid in the socket
             // TODO: what i should do with the result
-            debug!("Asking for new connection: {uuid}");
+            trace!("Asking for new connection: {uuid}");
             let _ = sender.send(Message::Text(uuid.to_string())).await;
         },
     }

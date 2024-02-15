@@ -1,35 +1,25 @@
-use axum::{routing::get, Router};
-use log::info;
-use proxy::PendingSocketConnections;
+use clap::Parser;
 
-mod control;
-mod proxy;
-mod socket;
+mod arguments;
+mod local;
 
 #[tokio::main]
 async fn main() {
     // Initialize tracing and log
     tracing_subscriber::fmt::init();
-    env_logger::init();
 
-    // Create shared states.
-    // We can simply leak these values to do not pay for reference counting because we need them for the rest of the program.
-    let pending_sockets: &'static PendingSocketConnections = Box::leak(Box::new(PendingSocketConnections::default()));
+    // Parse command line arguments
+    let args = arguments::Args::parse();
 
-    // Build our application with a route
-    let app = Router::new()
-        .route("/control", get(control::ws_handler))
-        .route("/connect", get(proxy::ws_handler))
-        .with_state(pending_sockets);
-
-    // Run our app with hyper on another task
-    let cf_listen_address = std::env::var("CF_LISTEN_ADDRESS").unwrap_or("0.0.0.0:2095".to_owned());
-    info!("Cloudflare listen is {cf_listen_address}");
-    let listener = tokio::net::TcpListener::bind(cf_listen_address).await.expect("cannot bind the TCP socket");
-    tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
-
-    // In main thread, wait for TCP sockets
-    let local_listen_address = std::env::var("LOCAL_LISTEN_ADDRESS").unwrap_or("127.0.0.1:3000".to_owned());
-    info!("Local listen is {local_listen_address}");
-    socket::handle_socket(&local_listen_address, pending_sockets).await;
+    // Start the server or client
+    match args.command {
+        arguments::Commands::Local {
+            tcp_listen_address,
+            cloudflare_listen_address,
+        } => local::start_local_server(&cloudflare_listen_address, &tcp_listen_address).await,
+        arguments::Commands::Server {
+            cloudflare_server_address,
+            forward_address,
+        } => todo!(),
+    }
 }
