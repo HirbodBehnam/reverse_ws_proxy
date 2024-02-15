@@ -2,6 +2,7 @@ use clap::Parser;
 
 mod arguments;
 mod local;
+mod remote;
 
 #[tokio::main]
 async fn main() {
@@ -20,6 +21,6 @@ async fn main() {
         arguments::Commands::Server {
             cloudflare_server_address,
             forward_address,
-        } => todo!(),
-    }
+        } => remote::start_remote_controller(cloudflare_server_address, forward_address).await,
+    };
 }

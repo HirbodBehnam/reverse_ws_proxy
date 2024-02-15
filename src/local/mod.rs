@@ -22,7 +22,7 @@ pub async fn start_local_server(cf_listen_address: &str, local_listen_address: &
     info!("Cloudflare listen is {cf_listen_address}");
     let listener = tokio::net::TcpListener::bind(cf_listen_address)
         .await
-        .expect("cannot bind the TCP socket");
+        .expect("cannot bind the Axum socket");
     tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
 
     // In main thread, wait for TCP sockets

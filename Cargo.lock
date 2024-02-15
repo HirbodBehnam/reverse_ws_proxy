@@ -806,6 +806,7 @@ dependencies = [
  "log",
  "parking_lot",
  "tokio",
+ "tokio-tungstenite",
  "tracing-subscriber",
  "uuid",
 ]
