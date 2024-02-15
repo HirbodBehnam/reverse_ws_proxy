@@ -10,9 +10,10 @@ mod proxy;
 pub async fn start_remote_controller(cloudflare_server_address: String, forward_address: String) {
     // First thing we should do is starting a websocket client as the controller of the
     // local computer.
-    let (mut controller_websocket, _) = connect_async(format!("{}/control", cloudflare_server_address))
-        .await
-        .expect("cannot parse the cloudflare_server_address");
+    let (mut controller_websocket, _) =
+        connect_async(format!("{}/control", cloudflare_server_address))
+            .await
+            .expect("cannot parse the cloudflare_server_address");
     debug!("Controller connected");
     // Get the ack message
     match controller_websocket.next().await {
