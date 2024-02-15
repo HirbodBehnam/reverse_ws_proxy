@@ -80,7 +80,7 @@ async fn handle_socket(
             command = command_receiver.recv() => {
                 match command {
                     Some(command) => handle_control_command(command, &mut sender).await,
-                    None => panic!("COMMAND RECEIVER CLOSED"),
+                    None => panic!("COMMAND RECEIVER CLOSED"), // TODO: close the socket
                 }
             }
         }
