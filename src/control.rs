@@ -62,13 +62,13 @@ async fn handle_socket(
     // Create another task for watch for the incoming data from the websocket.
     // In that case, we can catch the errors. Note that I could have possibly just put it in the
     // select loop but I think this is quite nicer because the data will be continuously pulled.
+    // Plus, I don't now if receiver.next() is cancel safe or not.
     let (mut sender, mut receiver) = socket.split();
     let mut recv_packet = tokio::spawn(async move {
-        while let Some(Ok(msg)) = receiver.next().await {
-            if let Message::Close(close_code) = msg {
-                warn!("Controller died: {:?}", close_code);
-                return;
-            }
+        // Ignore all messages except the close message
+        while let Some(Ok(Message::Close(close_code))) = receiver.next().await {
+            warn!("Controller died: {:?}", close_code);
+            return;
         }
     });
     // In a loop, wait for events

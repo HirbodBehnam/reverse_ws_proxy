@@ -12,14 +12,15 @@ async fn main() {
     tracing_subscriber::fmt::init();
     env_logger::init();
 
-    // Create shared states
-    let pending_sockets = PendingSocketConnections::default();
+    // Create shared states.
+    // We can simply leak these values to do not pay for reference counting because we need them for the rest of the program.
+    let pending_sockets: &'static PendingSocketConnections = Box::leak(Box::new(PendingSocketConnections::default()));
 
     // Build our application with a route
     let app = Router::new()
         .route("/control", get(control::ws_handler))
-        .route("/connect", get(control::ws_handler))
-        .with_state(pending_sockets.clone());
+        .route("/connect", get(proxy::ws_handler))
+        .with_state(pending_sockets);
 
     // Run our app with hyper on another task
     let cf_listen_address = std::env::var("CF_LISTEN_ADDRESS").unwrap_or("0.0.0.0:2095".to_owned());

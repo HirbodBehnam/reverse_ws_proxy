@@ -18,7 +18,7 @@ const READ_BUFFER_SIZE: usize = 32 * 1024;
 
 /// This function will handle the socket listening and controlling the controller
 /// to open new connections and such
-pub async fn handle_socket(listen: &str, pending_packets: proxy::PendingSocketConnections) {
+pub async fn handle_socket(listen: &str, pending_packets: &proxy::PendingSocketConnections) {
     // Create the socket and listen
     let listener = tokio::net::TcpListener::bind(listen)
         .await
